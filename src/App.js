@@ -1,18 +1,8 @@
-const [formData, setFormData] = useState({
-    id: '',
-    cliente: '',
-    cv: '',
-    polos: '',
-    marca: '',
-    foto: null,
-    fotoURL: '',
-    dataServico: new Date().toISOString().split('T')[0]
-  });import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Save, X, LogOut, Camera } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
-import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 
 // Configuração Firebase
 const firebaseConfig = {
@@ -27,7 +17,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 export default function RebobinagemApp() {
   const [user, setUser] = useState(null);
@@ -43,6 +32,8 @@ export default function RebobinagemApp() {
     cv: '',
     polos: '',
     marca: '',
+    foto: null,
+    fotoPreview: '',
     dataServico: new Date().toISOString().split('T')[0]
   });
 
@@ -118,7 +109,8 @@ export default function RebobinagemApp() {
       reader.onloadend = () => {
         setFormData(prev => ({
           ...prev,
-          foto: reader.result
+          foto: reader.result,
+          fotoPreview: reader.result
         }));
       };
       reader.readAsDataURL(file);
@@ -136,13 +128,23 @@ export default function RebobinagemApp() {
     try {
       if (editingId) {
         // Atualizar
-        await updateDoc(doc(db, 'rebobinagens', editingId), {
+        const updateData = {
           cliente: formData.cliente,
           cv: formData.cv,
           polos: formData.polos,
           marca: formData.marca,
           dataServico: formData.dataServico
-        });
+        };
+        
+        // Se tem foto nova, salva
+        if (formData.foto && formData.foto !== formData.fotoPreview) {
+          updateData.foto = formData.foto;
+        } else if (formData.fotoPreview && !formData.foto) {
+          // Mantém a foto anterior
+          updateData.foto = formData.fotoPreview;
+        }
+
+        await updateDoc(doc(db, 'rebobinagens', editingId), updateData);
         setEditingId(null);
       } else {
         // Adicionar novo
@@ -152,14 +154,14 @@ export default function RebobinagemApp() {
           cv: formData.cv,
           polos: formData.polos,
           marca: formData.marca,
-          fotoURL: formData.foto || '',
+          foto: formData.foto || null,
           dataServico: formData.dataServico,
           dataCriacao: new Date()
         });
       }
 
       setFormData({
-        id: '', cliente: '', cv: '', polos: '', marca: '', foto: null, fotoURL: '',
+        id: '', cliente: '', cv: '', polos: '', marca: '', foto: null, fotoPreview: '',
         dataServico: new Date().toISOString().split('T')[0]
       });
       setShowForm(false);
@@ -179,7 +181,7 @@ export default function RebobinagemApp() {
       polos: rebob.polos,
       marca: rebob.marca,
       foto: null,
-      fotoURL: rebob.fotoURL || '',
+      fotoPreview: rebob.foto || '',
       dataServico: rebob.dataServico
     });
     setEditingId(rebob.id);
@@ -201,7 +203,7 @@ export default function RebobinagemApp() {
     setShowForm(false);
     setEditingId(null);
     setFormData({
-      id: '', cliente: '', cv: '', polos: '', marca: '', foto: null, fotoURL: '',
+      id: '', cliente: '', cv: '', polos: '', marca: '', foto: null, fotoPreview: '',
       dataServico: new Date().toISOString().split('T')[0]
     });
   };
@@ -357,9 +359,9 @@ export default function RebobinagemApp() {
                     id="foto-input"
                   />
                   <label htmlFor="foto-input" className="cursor-pointer flex flex-col items-center">
-                    {formData.foto ? (
+                    {formData.fotoPreview ? (
                       <div className="w-full">
-                        <img src={formData.foto} alt="Preview" className="max-h-32 mx-auto rounded-lg mb-2" />
+                        <img src={formData.fotoPreview} alt="Preview" className="max-h-32 mx-auto rounded-lg mb-2" />
                         <p className="text-blue-600 font-semibold">Clique para trocar foto</p>
                       </div>
                     ) : (
@@ -432,9 +434,9 @@ export default function RebobinagemApp() {
                       <td className="px-6 py-4 font-semibold text-gray-700">{rebob.marca}</td>
                       <td className="px-6 py-4 text-gray-600">{rebob.dataServico}</td>
                       <td className="px-6 py-4 text-center">
-                        {rebob.fotoURL ? (
+                        {rebob.foto ? (
                           <button
-                            onClick={() => window.open(rebob.fotoURL, '_blank')}
+                            onClick={() => window.open(rebob.foto, '_blank')}
                             className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold"
                           >
                             📸 Ver
@@ -474,4 +476,4 @@ export default function RebobinagemApp() {
       </div>
     </div>
   );
-    }
+                    }
