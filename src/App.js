@@ -5,7 +5,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
 
 const CLOUDINARY_CLOUD_NAME = 'ds9znhufs';
-const CLOUDINARY_UPLOAD_PRESET = 'rebobinagem_motores';
+const CLOUDINARY_UPLOAD_PRESET = 'ml_default';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCwQL3DzLpHQ0ZcTip10rhFUGa_Uyli9jU",
@@ -364,4 +364,4 @@ export default function RebobinagemApp() {
       )}
     </div>
   );
-      }
+}
