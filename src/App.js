@@ -1,4 +1,15 @@
-import React, { useState, useEffect } from 'react';
+<td className="px-6 py-4 text-center">
+                        {rebob.foto ? (
+                          <button
+                            onClick={() => setFotoModal(rebob.foto)}
+                            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold"
+                          >
+                            📸 Ver
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 text-sm">Sem foto</span>
+                        )}
+                      </td>import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Save, X, LogOut, Camera } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
@@ -26,6 +37,7 @@ export default function RebobinagemApp() {
   const [loading, setLoading] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   const [authData, setAuthData] = useState({ email: '', senha: '' });
+  const [fotoModal, setFotoModal] = useState(null);
   const [formData, setFormData] = useState({
     id: '',
     cliente: '',
@@ -474,6 +486,34 @@ export default function RebobinagemApp() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Foto */}
+      {fotoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h3 className="text-xl font-bold text-gray-800">Foto do Motor</h3>
+              <button
+                onClick={() => setFotoModal(null)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 flex justify-center">
+              <img src={fotoModal} alt="Foto do motor" className="max-w-full max-h-96 rounded-lg" />
+            </div>
+            <div className="flex justify-center p-6 border-t">
+              <button
+                onClick={() => setFotoModal(null)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-                    }
+}
