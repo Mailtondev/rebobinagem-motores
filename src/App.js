@@ -4,8 +4,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
 
-const CLOUDINARY_CLOUD_NAME = 'ds9znhufs';
-const CLOUDINARY_UPLOAD_PRESET = 'ml_default';
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyCwQL3DzLpHQ0ZcTip10rhFUGa_Uyli9jU",
@@ -101,34 +100,7 @@ export default function RebobinagemApp() {
     }
   };
 
-  const uploadFotoCloudinary = async () => {
-    if (!formData.fotoFile) return '';
 
-    const formDataCloud = new FormData();
-    formDataCloud.append('file', formData.fotoFile);
-    formDataCloud.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-
-    try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-        {
-          method: 'POST',
-          body: formDataCloud
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Erro ao enviar foto: ' + response.statusText);
-      }
-
-      const data = await response.json();
-      return data.secure_url;
-    } catch (e) {
-      console.error('Erro Cloudinary:', e);
-      alert('Erro ao enviar foto: ' + e.message);
-      return '';
-    }
-  };
 
   const handleAddRebobinagem = async () => {
     if (!formData.cliente || !formData.cv || !formData.polos || !formData.marca) {
@@ -138,12 +110,6 @@ export default function RebobinagemApp() {
 
     setLoading(true);
     try {
-      let fotoURL = formData.fotoURL;
-
-      if (formData.fotoFile) {
-        fotoURL = await uploadFotoCloudinary();
-      }
-
       if (editingId) {
         const updateData = {
           cliente: formData.cliente,
@@ -152,7 +118,7 @@ export default function RebobinagemApp() {
           marca: formData.marca,
           dataServico: formData.dataServico
         };
-        if (fotoURL) updateData.fotoURL = fotoURL;
+        if (formData.fotoPreview) updateData.fotoBase64 = formData.fotoPreview;
         await updateDoc(doc(db, 'rebobinagens', editingId), updateData);
       } else {
         await addDoc(collection(db, 'rebobinagens'), {
@@ -161,7 +127,7 @@ export default function RebobinagemApp() {
           cv: formData.cv,
           polos: formData.polos,
           marca: formData.marca,
-          fotoURL: fotoURL || '',
+          fotoBase64: formData.fotoPreview || '',
           dataServico: formData.dataServico,
           dataCriacao: new Date()
         });
@@ -317,8 +283,8 @@ export default function RebobinagemApp() {
                       <td className="px-6 py-4 font-semibold text-gray-700">{rebob.marca}</td>
                       <td className="px-6 py-4 text-gray-600">{rebob.dataServico}</td>
                       <td className="px-6 py-4 text-center">
-                        {rebob.fotoURL ? (
-                          <button onClick={() => setFotoModal(rebob.fotoURL)} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">
+                        {rebob.fotoBase64 ? (
+                          <button onClick={() => setFotoModal(rebob.fotoBase64)} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">
                             📸 Ver
                           </button>
                         ) : (
@@ -364,4 +330,4 @@ export default function RebobinagemApp() {
       )}
     </div>
   );
-}
+            }
