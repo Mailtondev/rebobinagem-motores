@@ -3,8 +3,7 @@ import { Plus, Trash2, Edit2, Save, X, LogOut, Camera } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
-
-
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCwQL3DzLpHQ0ZcTip10rhFUGa_Uyli9jU",
@@ -18,6 +17,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 export default function RebobinagemApp() {
   const [user, setUser] = useState(null);
@@ -100,8 +100,6 @@ export default function RebobinagemApp() {
     }
   };
 
-
-
   const handleAddRebobinagem = async () => {
     if (!formData.cliente || !formData.cv || !formData.polos || !formData.marca) {
       alert('Preencha todos os campos!');
@@ -110,6 +108,16 @@ export default function RebobinagemApp() {
 
     setLoading(true);
     try {
+      let fotoURL = formData.fotoURL;
+
+      // Se tem foto nova, fazer upload no Storage
+      if (formData.fotoFile) {
+        const fileName = `${user.uid}/${Date.now()}_${formData.fotoFile.name}`;
+        const storageRef = ref(storage, `rebobinagens/${fileName}`);
+        await uploadBytes(storageRef, formData.fotoFile);
+        fotoURL = await getDownloadURL(storageRef);
+      }
+
       if (editingId) {
         const updateData = {
           cliente: formData.cliente,
@@ -118,7 +126,7 @@ export default function RebobinagemApp() {
           marca: formData.marca,
           dataServico: formData.dataServico
         };
-        if (formData.fotoPreview) updateData.fotoBase64 = formData.fotoPreview;
+        if (fotoURL) updateData.fotoURL = fotoURL;
         await updateDoc(doc(db, 'rebobinagens', editingId), updateData);
       } else {
         await addDoc(collection(db, 'rebobinagens'), {
@@ -127,7 +135,7 @@ export default function RebobinagemApp() {
           cv: formData.cv,
           polos: formData.polos,
           marca: formData.marca,
-          fotoBase64: formData.fotoPreview || '',
+          fotoURL: fotoURL || '',
           dataServico: formData.dataServico,
           dataCriacao: new Date()
         });
@@ -165,6 +173,18 @@ export default function RebobinagemApp() {
   const handleDelete = async (id) => {
     if (window.confirm('Deletar?')) {
       try {
+        const rebob = rebobinagens.find(r => r.id === id);
+        
+        // Deletar foto do Storage se existir
+        if (rebob.fotoURL) {
+          try {
+            const fotoRef = ref(storage, rebob.fotoURL);
+            await deleteObject(fotoRef);
+          } catch (e) {
+            console.log('Foto não encontrada no storage');
+          }
+        }
+        
         await deleteDoc(doc(db, 'rebobinagens', id));
         carregarDados(user.uid);
       } catch (e) {
@@ -283,8 +303,8 @@ export default function RebobinagemApp() {
                       <td className="px-6 py-4 font-semibold text-gray-700">{rebob.marca}</td>
                       <td className="px-6 py-4 text-gray-600">{rebob.dataServico}</td>
                       <td className="px-6 py-4 text-center">
-                        {rebob.fotoBase64 ? (
-                          <button onClick={() => setFotoModal(rebob.fotoBase64)} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">
+                        {rebob.fotoURL ? (
+                          <button onClick={() => setFotoModal(rebob.fotoURL)} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">
                             📸 Ver
                           </button>
                         ) : (
@@ -330,4 +350,4 @@ export default function RebobinagemApp() {
       )}
     </div>
   );
-            }
+        }
